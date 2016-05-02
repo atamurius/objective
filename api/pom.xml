@@ -38,6 +38,12 @@
     </profiles>
 
     <dependencies>
+        <!-- OBJECTIVE -->
+        <dependency>
+            <groupId>ua.atamurius.objective</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
         <!-- SPRING -->
         <dependency>
             <groupId>org.springframework</groupId>
