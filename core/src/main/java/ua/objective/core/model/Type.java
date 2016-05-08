@@ -1,94 +1,76 @@
 package ua.objective.core.model;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.*;
 import java.util.function.Consumer;
 
 /**
- * Data type, contains attributes.
+ * Data type, contains attributes, derives attributes from super types.
  */
-public class Type {
+public interface Type {
 
-    private boolean isAbstract;
-    private String group;
-    private String name;
-    private List<Type> superTypes = new ArrayList<>();
-    private List<Attribute> attributes = new ArrayList<>();
+    interface Builder {
 
-    private Map<String,Attribute> allAttributes = new LinkedHashMap<>();
+        Builder extend(Type type);
 
-    public Type(String group, String name) {
-        this.group = group;
-        this.name = name;
+        Builder addAttribute(String name, AttrType type);
+
+        Builder setGroup(@Nonnull String group);
+
+        Builder setName(@Nonnull String name);
+
+        Builder setAbstract(boolean isAbstract);
+
+        Type build();
     }
 
-    public void eachType(Consumer<Type> consumer) {
-        superTypes.forEach(t -> t.eachType(consumer));
-        consumer.accept(this);
-    }
+    /**
+     * Iterates over all super types and (maybe) self.
+     */
+    void eachType(boolean withSelf, Consumer<Type> consumer);
 
-    private void updateAttrCache() {
-        allAttributes.clear();
-        eachType(t -> {
-            String base = t.group + ":" + t.name + ":";
-            t.attributes.forEach(a ->
-                    allAttributes.put(base + a.getName(), a));
-        });
-    }
+    /**
+     * Iterates over all subtypes and (maybe) self.
+     */
+    void eachSubtype(boolean withSelf, Consumer<Type> consumer);
 
-    public String getGroup() {
-        return group;
-    }
+    @Nonnull String getGroup();
 
-    public void setGroup(String group) {
-        this.group = group;
-    }
+    @Nonnull String getName();
 
-    public String getName() {
-        return name;
-    }
+    /**
+     * Direct type supertypes.
+     */
+    @Nonnull Set<Type> getSuperTypes();
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    @Nonnull Set<Type> getSubTypes();
 
-    public List<Type> getSuperTypes() {
-        return superTypes;
-    }
+    boolean hasDirectSuperType(Type type);
 
-    public List<Attribute> getAttributes() {
-        return attributes;
-    }
+    boolean hasSuperType(Type type);
 
-    public boolean isAbstract() {
-        return isAbstract;
-    }
+    /**
+     * Attributes, defined in this type
+     */
+    @Nonnull Set<Attribute> getOwnAttributes();
 
-    public void setAbstract(boolean isAbstract) {
-        this.isAbstract = isAbstract;
-    }
+    /**
+     * All type attributes by qualified name.
+     */
+    @Nonnull Map<String,Attribute> getAttributes();
 
-    public String getQualifiedName() {
-        return getGroup() +":"+ getName();
-    }
+    /**
+     * Gets attribute by qualified name, returns null if no such attribute exists.
+     */
+    @Nullable Attribute getAttribute(String qName);
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder(isAbstract ? "abstract " : "");
-        sb.append(getQualifiedName());
-        if (! getSuperTypes().isEmpty()) {
-            int i = 0;
-            for (Type type : getSuperTypes()) {
-                sb.append(i++ > 0 ? ", " : " extends ").append(type.getQualifiedName());
-            }
-        }
-        sb.append("{");
-        for (Attribute a : getAttributes()) {
-            sb.append("\n\t").append(a.getName()).append(": ").append(a.getType().getClass().getCanonicalName());
-        }
-        sb.append("\n}");
-        return sb.toString();
-    }
+    /**
+     * Gets set of attributes by simple name.
+     */
+    @Nonnull Set<Attribute> getAttributeUnqualified(String name);
+
+    boolean isAbstract();
+
+    @Nonnull String getQualifiedName();
 }

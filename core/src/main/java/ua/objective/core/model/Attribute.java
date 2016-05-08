@@ -1,30 +1,17 @@
 package ua.objective.core.model;
 
+import javax.annotation.Nonnull;
+
 /**
  * Data field (single typed value)
  */
-public class Attribute {
-    private String name;
-    private AttrType type;
+public interface Attribute {
 
-    public Attribute(String name, AttrType type) {
-        this.name = name;
-        this.type = type;
-    }
+    @Nonnull String getName();
 
-    public String getName() {
-        return name;
-    }
+    @Nonnull AttrType getType();
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    @Nonnull Type getOwner();
 
-    public AttrType getType() {
-        return type;
-    }
-
-    public void setType(AttrType type) {
-        this.type = type;
-    }
+    @Nonnull String getQualifiedName();
 }

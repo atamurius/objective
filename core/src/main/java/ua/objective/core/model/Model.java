@@ -1,30 +1,24 @@
 package ua.objective.core.model;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
 
 /**
  * Types container.
  */
-public class Model {
+public interface Model {
 
-    private final Map<String,Type> types = new HashMap<>();
+    @Nonnull Collection<Type> getTypes();
 
-    public Collection<Type> getTypes() {
-        return types.values();
-    }
+    /**
+     * @throws NoSuchElementException
+     */
+    @Nonnull Type getTypeByQName(String name);
 
-    public Type getTypeByQName(String name) {
-        return types.get(name);
-    }
+    @Nonnull Set<AttrType> getAttrTypes();
 
-    public void add(Type type) {
-        types.put(type.getQualifiedName(), type);
-    }
-
-    @Override
-    public String toString() {
-        return getTypes().toString();
-    }
+    @Nonnull
+    Type.Builder createType(String group, String name);
 }

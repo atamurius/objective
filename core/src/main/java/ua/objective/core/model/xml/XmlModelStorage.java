@@ -1,6 +1,9 @@
 package ua.objective.core.model.xml;
 
 import ua.objective.core.model.AttrType;
+import ua.objective.core.model.beans.AttributeBean;
+import ua.objective.core.model.beans.ModelBean;
+import ua.objective.core.model.beans.TypeBean;
 import ua.objective.core.model.types.DateType;
 import ua.objective.core.model.types.IntType;
 import ua.objective.core.model.types.TextType;
@@ -12,6 +15,9 @@ import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
+
+import ua.objective.core.model.Type.Builder;
 
 public class XmlModelStorage {
 
@@ -31,7 +37,7 @@ public class XmlModelStorage {
                 type.setAbstract(t.isAbstract());
                 t.getSuperTypes().forEach(st ->
                         type.extendFrom(st.getQualifiedName()));
-                t.getAttributes().forEach(a ->
+                t.getOwnAttributes().forEach(a ->
                         type.getAttributes().add(
                                 new Attribute(a.getName(),
                                 a.getType().getClass().getCanonicalName())));
@@ -63,8 +69,7 @@ public class XmlModelStorage {
                 ua.objective.core.model.Type type = model.getTypeByQName(group + ":" + t.getName());
                 for (String st : t.getBaseTypeNames()) {
                     ua.objective.core.model.Type sType = model.getTypeByQName(st);
-                    if (sType == null)
-                        throw new IOException("Unknown supertype: "+ st);
+                    // TODO edit using model
                     type.getSuperTypes().add(sType);
                 }
             }
@@ -72,19 +77,18 @@ public class XmlModelStorage {
         }
     }
 
-    private void loadTypes(ua.objective.core.model.Model model, String pkg, PkgContainer container) throws IOException {
+    private void loadTypes(ua.objective.core.model.Model model,
+                           String pkg, PkgContainer container) throws IOException {
         for (Package p : container.getPackages()) {
             String group = pkg.isEmpty() ? p.getName() : pkg +"."+ p.getName();
             for (Type t : p.getTypes()) {
-                ua.objective.core.model.Type type = new ua.objective.core.model.Type(group, t.getName());
-                type.setAbstract(t.isAbstract());
+                Builder typeBuilder = model.createType(group, t.getName());
+                typeBuilder.setAbstract(t.isAbstract());
                 for (Attribute a : t.getAttributes()) {
-                        type.getAttributes().add(
-                                new ua.objective.core.model.Attribute(
-                                    a.getName(),
-                                    buildType(a.getType())));
+                        typeBuilder.addAttribute(a.getName(),
+                                buildType(a.getType()));
                 }
-                model.add(type);
+                typeBuilder.build();
             }
             loadTypes(model, group, p);
         }
@@ -110,30 +114,30 @@ public class XmlModelStorage {
 
     @PostConstruct
     public void createTestModel() throws IOException {
-        ua.objective.core.model.Type versioned = new ua.objective.core.model.Type(
-                "ua.objective.core", "Versioned");
-        versioned.getAttributes().add(new ua.objective.core.model.Attribute("version", new IntType()));
-        versioned.setAbstract(true);
+        ua.objective.core.model.beans.ModelBean model = new ua.objective.core.model.beans.ModelBean();
 
-        ua.objective.core.model.Type any = new ua.objective.core.model.Type(
-                "ua.objective.core", "Any");
-        any.getAttributes().add(new ua.objective.core.model.Attribute("created", new DateType()));
-        any.getAttributes().add(new ua.objective.core.model.Attribute("updated", new DateType()));
-        any.setAbstract(true);
+        ua.objective.core.model.Type versioned =
+                model.createType("ua.objective.core", "Versioned")
+                    .addAttribute("version", new IntType())
+                    .setAbstract(true)
+                    .build();
 
-        ua.objective.core.model.Type user = new ua.objective.core.model.Type(
-                "ua.objective.core.users", "User");
-        user.getAttributes().add(new ua.objective.core.model.Attribute("name", new TextType()));
-        user.getSuperTypes().add(any);
-        user.getSuperTypes().add(versioned);
+        ua.objective.core.model.Type any =
+                model.createType("ua.objective.core", "Any")
+                    .addAttribute("created", new DateType())
+                    .addAttribute("updated", new DateType())
+                    .setAbstract(true)
+                    .build();
 
-        ua.objective.core.model.Model model = new ua.objective.core.model.Model();
-        model.add(any);
-        model.add(versioned);
-        model.add(user);
+        ua.objective.core.model.Type user =
+                model.createType("ua.objective.core.users", "User")
+                    .addAttribute("name", new TextType())
+                    .extend(any)
+                    .extend(versioned)
+                    .build();
 
         store(model);
-        ua.objective.core.model.Model model1 = new ua.objective.core.model.Model();
+        ua.objective.core.model.Model model1 = new ua.objective.core.model.beans.ModelBean();
         load(model1);
 
         System.out.println(model1);
