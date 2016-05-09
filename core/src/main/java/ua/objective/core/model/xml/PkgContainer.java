@@ -9,17 +9,17 @@ import java.util.List;
  */
 public abstract class PkgContainer {
 
-    private List<Package> packages;
+    private List<PackageNode> packages;
 
     @XmlElement(name = "package")
-    public List<Package> getPackages() {
+    public List<PackageNode> getPackages() {
         if (packages == null) {
             packages = new ArrayList<>();
         }
         return packages;
     }
 
-    public void setPackages(List<Package> packages) {
+    public void setPackages(List<PackageNode> packages) {
         this.packages = packages;
     }
 }

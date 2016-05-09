@@ -1,10 +1,8 @@
 package ua.objective.core.model.beans;
 
-import ua.objective.core.model.AttrType;
 import ua.objective.core.model.Attribute;
 import ua.objective.core.model.Type;
 
-import javax.annotation.Nonnull;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,19 +17,20 @@ import static java.util.Objects.requireNonNull;
 public class TypeBean implements Type {
 
     private boolean isAbstract;
-    private @Nonnull String group;
-    private @Nonnull String name;
-    private final @Nonnull Set<Type> superTypes;
-    private final @Nonnull Set<Type> subTypes;
-    private final @Nonnull Set<Attribute> ownAttributes;
-    private final @Nonnull Map<String,Attribute> attributes;
+    private String group;
+    private String name;
+    private final Set<TypeBean> superTypes;
+    private final Set<TypeBean> subTypes;
+    private final Set<Attribute> ownAttributes;
+    private final Map<String,Attribute> attributes;
 
-    private final @Nonnull Set<Type> superTypesP;
-    private final @Nonnull Set<Type> subTypesP;
-    private final @Nonnull Set<Attribute> ownAttributesP;
-    private final @Nonnull Map<String,Attribute> attributesP;
+    private final Set<TypeBean> superTypesP;
+    private final Set<TypeBean> subTypesP;
+    private final Set<Attribute> ownAttributesP;
+    private final Map<String,Attribute> attributesP;
 
-    TypeBean(@Nonnull String group, @Nonnull String name) {
+    TypeBean(String group, String name) {
+        this.isAbstract = true;
         this.group = requireNonNull(group, "group");
         this.name = requireNonNull(name, "name");
         this.superTypes = new CopyOnWriteArraySet<>();
@@ -45,81 +44,52 @@ public class TypeBean implements Type {
         this.attributesP = unmodifiableMap(attributes);
     }
 
-    class Editor implements Type.Builder {
+    /* --- mutators --- */
 
-        private ModelBean model;
-
-        Editor(ModelBean model) {
-            this.model = model;
-        }
-
-        public TypeBean updateDerivedAttributes() {
-            attributes.clear();
-            eachType(false, t -> attributes.putAll(t.getAttributes()));
-            ownAttributes.forEach(a -> attributes.put(a.getQualifiedName(), a));
-            return TypeBean.this;
-        }
-
-        public Set<Type> superTypes() {
-            return superTypes;
-        }
-
-        @Override
-        public Editor extend(Type type) {
-            superTypes.add(type);
-            ((TypeBean) type).subTypes.add(TypeBean.this);
-            return this;
-        }
-
-        @Override
-        public Editor addAttribute(String name, AttrType type) {
-            ownAttributes.add(new AttributeBean(TypeBean.this, name, type));
-            return this;
-        }
-
-        public Set<Type> subTypes() {
-            return subTypes;
-        }
-
-        public Set<Attribute> ownAttributes() {
-            return ownAttributes;
-        }
-
-        @Override
-        public Editor setGroup(@Nonnull String group) {
-            TypeBean.this.group = group;
-            return this;
-        }
-
-        @Override
-        public Editor setName(@Nonnull String name) {
-            TypeBean.this.name = name;
-            return this;
-        }
-
-        @Override
-        public Editor setAbstract(boolean isAbstract) {
-            TypeBean.this.isAbstract = isAbstract;
-            return this;
-        }
-
-        @Override
-        public Type build() {
-            if (model != null) model.add(TypeBean.this);
-            return updateDerivedAttributes();
-        }
+    void updateDerivedAttributes() {
+        attributes.clear();
+        eachType(false, t -> attributes.putAll(t.getAttributes()));
+        ownAttributes.forEach(a -> attributes.put(a.getQualifiedName(), a));
     }
 
-    @Override
-    public void eachType(boolean withSelf, Consumer<Type> consumer) {
+    Set<TypeBean> superTypes() {
+        return superTypes;
+    }
+
+    Set<TypeBean> subTypes() {
+        return subTypes;
+    }
+
+    Set<Attribute> ownAttributes() {
+        return ownAttributes;
+    }
+
+    void setGroup(String group) {
+        this.group = group;
+    }
+
+    void setName(String name) {
+        this.name = name;
+    }
+
+    void setAbstract(boolean isAbstract) {
+        this.isAbstract = isAbstract;
+    }
+
+    String getAttributeQualifiedName(String name) {
+        return getQualifiedName() + "#" + name;
+    }
+
+    /* --- end of mutators --- */
+
+    public void eachType(boolean withSelf, Consumer<TypeBean> consumer) {
         superTypes.forEach(t -> t.eachType(true, consumer));
         if (withSelf) {
             consumer.accept(this);
         }
     }
 
-    @Override
-    public void eachSubtype(boolean withSelf, Consumer<Type> consumer) {
+    public void eachSubtype(boolean withSelf, Consumer<TypeBean> consumer) {
         if (withSelf) {
             consumer.accept(this);
         }
@@ -127,26 +97,22 @@ public class TypeBean implements Type {
     }
 
     @Override
-    @Nonnull
     public String getGroup() {
         return group;
     }
 
     @Override
-    @Nonnull
     public String getName() {
         return name;
     }
 
     @Override
-    @Nonnull
-    public Set<Type> getSuperTypes() {
+    public Set<TypeBean> getSuperTypes() {
         return superTypesP;
     }
 
     @Override
-    @Nonnull
-    public Set<Type> getSubTypes() {
+    public Set<TypeBean> getSubTypes() {
         return subTypesP;
     }
 
@@ -164,13 +130,11 @@ public class TypeBean implements Type {
     }
 
     @Override
-    @Nonnull
     public Set<Attribute> getOwnAttributes() {
         return ownAttributesP;
     }
 
     @Override
-    @Nonnull
     public Map<String, Attribute> getAttributes() {
         return attributesP;
     }
@@ -181,7 +145,6 @@ public class TypeBean implements Type {
     }
 
     @Override
-    @Nonnull
     public Set<Attribute> getAttributeUnqualified(String name) {
         return attributes.values().stream()
                 .filter(a -> a.getName().equals(name))
@@ -194,7 +157,6 @@ public class TypeBean implements Type {
     }
 
     @Override
-    @Nonnull
     public String getQualifiedName() {
         return getGroup() +":"+ getName();
     }

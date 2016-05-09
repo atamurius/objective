@@ -5,17 +5,17 @@ import javax.xml.bind.annotation.XmlElement;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Type {
+public class TypeNode {
 
     private boolean isAbstract;
     private String name;
 
     private List<String> baseTypeNames;
-    private List<Attribute> attributes;
+    private List<AttributeNode> attributes;
 
-    public Type() { }
+    public TypeNode() { }
 
-    public Type(Package pkg, String name) {
+    public TypeNode(PackageNode pkg, String name) {
         setName(name);
         pkg.getTypes().add(this);
     }
@@ -39,14 +39,14 @@ public class Type {
     }
 
     @XmlElement(name = "attribute")
-    public List<Attribute> getAttributes() {
+    public List<AttributeNode> getAttributes() {
         if (attributes == null) {
             attributes = new ArrayList<>();
         }
         return attributes;
     }
 
-    public void setAttributes(List<Attribute> attributes) {
+    public void setAttributes(List<AttributeNode> attributes) {
         this.attributes = attributes;
     }
 

@@ -1,6 +1,5 @@
 package ua.objective.core.model;
 
-import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -10,15 +9,12 @@ import java.util.Set;
  */
 public interface Model {
 
-    @Nonnull Collection<Type> getTypes();
+    Collection<? extends Type> getTypes();
 
     /**
      * @throws NoSuchElementException
      */
-    @Nonnull Type getTypeByQName(String name);
+    Type getTypeByQName(String name);
 
-    @Nonnull Set<AttrType> getAttrTypes();
-
-    @Nonnull
-    Type.Builder createType(String group, String name);
+    Set<AttrType> getAttrTypes();
 }

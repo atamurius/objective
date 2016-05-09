@@ -2,14 +2,14 @@ package ua.objective.core.model.xml;
 
 import javax.xml.bind.annotation.XmlAttribute;
 
-public class Attribute {
+public class AttributeNode {
 
     private String name;
     private String type;
 
-    public Attribute() { }
+    public AttributeNode() { }
 
-    public Attribute(String name, String type) {
+    public AttributeNode(String name, String type) {
         this.name = name;
         this.type = type;
     }

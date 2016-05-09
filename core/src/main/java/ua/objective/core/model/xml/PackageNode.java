@@ -5,15 +5,15 @@ import javax.xml.bind.annotation.XmlElement;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Package extends PkgContainer {
+public class PackageNode extends PkgContainer {
 
     private String name;
 
-    private List<Type> types;
+    private List<TypeNode> types;
 
-    public Package() { }
+    public PackageNode() { }
 
-    public Package(String name) {
+    public PackageNode(String name) {
         setName(name);
     }
 
@@ -27,14 +27,14 @@ public class Package extends PkgContainer {
     }
 
     @XmlElement(name = "type")
-    public List<Type> getTypes() {
+    public List<TypeNode> getTypes() {
         if (types == null) {
             types = new ArrayList<>();
         }
         return types;
     }
 
-    public void setTypes(List<Type> types) {
+    public void setTypes(List<TypeNode> types) {
         this.types = types;
     }
 }

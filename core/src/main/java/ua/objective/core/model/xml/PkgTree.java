@@ -10,7 +10,7 @@ import java.util.TreeMap;
 public class PkgTree {
 
     private static class Node {
-        Package pkg;
+        PackageNode pkg;
         String name;
         Map<String,Node> nodes = new TreeMap<>();
 
@@ -21,27 +21,27 @@ public class PkgTree {
 
     private Node root = new Node(null);
 
-    public Type add(ua.objective.core.model.Type type) {
+    public TypeNode add(ua.objective.core.model.Type type) {
         String[] pts = type.getGroup().split("\\.");
         Node node = root;
         for (String pt : pts) {
             node = node.nodes.computeIfAbsent(pt, Node::new);
         }
         if (node.pkg == null) {
-            node.pkg = new Package(node.name);
+            node.pkg = new PackageNode(node.name);
         }
-        return new Type(node.pkg, type.getName());
+        return new TypeNode(node.pkg, type.getName());
     }
 
-    public void fillPackages(Model model) {
+    public void fillPackages(ModelNode model) {
         root.nodes.values().forEach(n ->
                 model.getPackages().add(fillPackageNames(n)));
     }
 
-    private Package fillPackageNames(Node node) {
+    private PackageNode fillPackageNames(Node node) {
         if (node.pkg != null || node.nodes.size() > 1) {
-            Package pkg = node.pkg == null
-                ? new Package(node.name)
+            PackageNode pkg = node.pkg == null
+                ? new PackageNode(node.name)
                 : node.pkg;
 
             node.nodes.values().forEach(n ->
@@ -50,8 +50,8 @@ public class PkgTree {
         }
         else {
             Node next = node.nodes.values().iterator().next();
-            Package pkg = fillPackageNames(next);
-            pkg.setName(node.name +"."+ pkg.getName());
+            PackageNode pkg = fillPackageNames(next);
+            pkg.setName(node.name + "." + pkg.getName());
             return pkg;
         }
     }

@@ -1,99 +1,152 @@
 package ua.objective.core.model.beans;
 
 import ua.objective.core.model.AttrType;
+import ua.objective.core.model.Attribute;
 import ua.objective.core.model.Model;
-import ua.objective.core.model.Type;
 
-import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
+/**
+ * Host for all change operations.
+ */
 public class ModelBean implements Model {
 
-    private final Map<String,Type> types = new ConcurrentHashMap<>();
+    private final Map<String,TypeBean> types = new ConcurrentHashMap<>();
     private final Set<AttrType> attrTypes = new ConcurrentSkipListSet<>();
 
-    @Nonnull
-    @Override
-    public Type.Builder createType(String group, String name) {
-        return new TypeBean(group, name).new Editor(this);
+    private TypeBean register(TypeBean bean) {
+        String name = bean.getQualifiedName();
+        if (types.containsKey(name)) {
+            throw new IllegalArgumentException("Type " + name + " already exists");
+        }
+        else {
+            types.put(name, bean);
+            return bean;
+        }
+    }
+
+    /**
+     * Create and register new abstract type
+     */
+    public TypeBean createType(String group, String name) {
+        return register(new TypeBean(group, name));
     }
 
     @Override
-    @Nonnull
-    public Collection<Type> getTypes() {
+    public Collection<TypeBean> getTypes() {
         return types.values();
     }
 
+    /**
+     * @throws NoSuchElementException
+     */
     @Override
-    @Nonnull
-    public Type getTypeByQName(String name) {
-        Type type = types.get(name);
+    public TypeBean getTypeByQName(String name) {
+        TypeBean type = types.get(name);
         if (type != null)
             return type;
         else
             throw new NoSuchElementException(name);
     }
 
-    public void add(@Nonnull Type type) {
-        String name = type.getQualifiedName();
-        if (types.containsKey(name)) {
-            throw new IllegalArgumentException("Type " + name + " already exists");
-        }
-        else {
-            types.put(name, type);
-        }
-    }
-
     @Override
-    @Nonnull
     public Set<AttrType> getAttrTypes() {
         return attrTypes;
     }
 
-    public void extend(@Nonnull Type type, @Nonnull Type supertype) {
+    /**
+     * Adds `supertype` to list of super types of `type`
+     * @throws IllegalArgumentException in case if `supertype` is subtype of `type` (cyclic extension)
+     */
+    public void extend(TypeBean type, TypeBean supertype) {
         if (! type.hasDirectSuperType(supertype)) {
             if (supertype.hasSuperType(type)) {
                 throw new IllegalArgumentException("Cyclic extension is not allowed, trying extend " +
                         type.getQualifiedName() + " from " + supertype.getQualifiedName());
             }
-            editor(type).superTypes().add(supertype);
-            editor(supertype).subTypes().add(type);
-            type.eachSubtype(true, t -> editor(t).updateDerivedAttributes());
+            type.superTypes().add(supertype);
+            supertype.subTypes().add(type);
+            updateTreeAttributes(type);
         }
     }
 
-    public void unextend(@Nonnull Type type, @Nonnull Type supertype) {
+    /**
+     * Removes `supertype` from super types list of `type`
+     */
+    public void unextend(TypeBean type, TypeBean supertype) {
         if (type.hasDirectSuperType(supertype)) {
-            editor(type).superTypes().remove(supertype);
-            editor(supertype).subTypes().remove(type);
-            type.eachSubtype(true, t -> editor(t).updateDerivedAttributes());
+            type.superTypes().remove(supertype);
+            supertype.subTypes().remove(type);
+            updateTreeAttributes(type);
         }
     }
 
-    public void changeAbstract(@Nonnull Type type, boolean isAbstract) {
-        editor(type).setAbstract(isAbstract);
+    /**
+     * Changes abstract status of type
+     */
+    public void changeAbstract(TypeBean type, boolean isAbstract) {
+        type.setAbstract(isAbstract);
     }
 
-    public void changeName(@Nonnull Type type, @Nonnull String group, @Nonnull String name) {
+    /**
+     * Renames type
+     */
+    public TypeBean rename(TypeBean type, String group, String name) {
         if (! type.getGroup().equals(group) || ! type.getName().equals(name)) {
             types.remove(type.getQualifiedName());
-            editor(type).setGroup(group);
-            editor(type).setName(group);
-            types.put(type.getQualifiedName(), type);
+            type.setGroup(group);
+            type.setName(group);
+            return register(type);
+        }
+        else {
+            return type;
         }
     }
 
-    // TODO attributes
+    /**
+     * Adds new attribute to type
+     * @throws IllegalArgumentException if name is not unique within type
+     */
+    public AttributeBean addAttribute(TypeBean type, String name, AttrType attrType) {
+        AttributeBean attr = new AttributeBean(type, name, attrType);
+        if (type.getAttributes().containsKey(attr.getQualifiedName())) {
+            throw new IllegalArgumentException("Attribute with name "+ name +
+                    " already exists in type "+ type.getQualifiedName());
+        }
+        type.ownAttributes().add(attr);
+        updateTreeAttributes(type);
+        return attr;
+    }
 
-    private static TypeBean.Editor editor(Type type) {
-        if (type instanceof TypeBean) {
-            return ((TypeBean) type).new Editor(null);
+    public void removeAttribute(TypeBean type, String name) {
+        type.ownAttributes().remove(
+                type.getAttribute(type.getAttributeQualifiedName(name)));
+        updateTreeAttributes(type);
+    }
+
+    public AttributeBean rename(AttributeBean attr, String name) {
+        TypeBean owner = attr.getOwner();
+        Attribute existing = owner.getAttribute(owner.getAttributeQualifiedName(name));
+        if (existing != null) {
+            throw new IllegalArgumentException("Attribute with name "+ name +
+                    " already exists in type "+ owner.getQualifiedName());
         }
         else {
-            throw new IllegalArgumentException("Only TypeBean implementation allowed");
+            attr.setName(name);
+            updateTreeAttributes(owner);
+            return attr;
         }
+    }
+
+    public AttributeBean changeType(AttributeBean attr, AttrType type) {
+        attr.setType(type);
+        return attr;
+    }
+
+    private void updateTreeAttributes(TypeBean owner) {
+        owner.eachSubtype(true, TypeBean::updateDerivedAttributes);
     }
 
     @Override
