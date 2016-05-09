@@ -1,6 +1,8 @@
 package ua.objective.core.model.types;
 
-import ua.objective.core.model.AttrType;
+public class DateType extends AbstractType {
 
-public class DateType implements AttrType {
+    public DateType() {
+        super("date");
+    }
 }

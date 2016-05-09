@@ -1,6 +1,8 @@
 package ua.objective.core.model.types;
 
-import ua.objective.core.model.AttrType;
+public class TextType extends AbstractType {
 
-public class TextType implements AttrType {
+    public TextType() {
+        super("text");
+    }
 }

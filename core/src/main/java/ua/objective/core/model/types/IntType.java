@@ -1,6 +1,8 @@
 package ua.objective.core.model.types;
 
-import ua.objective.core.model.AttrType;
+public class IntType extends AbstractType {
 
-public class IntType implements AttrType {
+    public IntType() {
+        super("int");
+    }
 }

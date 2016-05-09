@@ -77,7 +77,7 @@ public class TypeBean implements Type {
     }
 
     String getAttributeQualifiedName(String name) {
-        return getQualifiedName() + "#" + name;
+        return getQualifiedName() + ATTRIBUTE_SEPARATOR + name;
     }
 
     /* --- end of mutators --- */
@@ -158,7 +158,7 @@ public class TypeBean implements Type {
 
     @Override
     public String getQualifiedName() {
-        return getGroup() +":"+ getName();
+        return getGroup() + TYPE_SEPARATOR + getName();
     }
 
     @Override

@@ -1,6 +1,8 @@
 package ua.objective.core.model.xml;
 
 import ua.objective.core.model.AttrType;
+import ua.objective.core.model.ModelStorage;
+import ua.objective.core.model.Type;
 import ua.objective.core.model.beans.ModelBean;
 import ua.objective.core.model.beans.TypeBean;
 import ua.objective.core.model.types.DateType;
@@ -15,7 +17,7 @@ import javax.xml.bind.Unmarshaller;
 import java.io.File;
 import java.io.IOException;
 
-public class XmlModelStorage {
+public class XmlModelStorage implements ModelStorage {
 
     private final File file;
     private final JAXBContext ctx;
@@ -25,6 +27,7 @@ public class XmlModelStorage {
         ctx = JAXBContext.newInstance(ModelNode.class);
     }
 
+    @Override
     public void store(ModelBean model) throws IOException {
         try {
             PkgTree pkgs = new PkgTree();
@@ -47,6 +50,7 @@ public class XmlModelStorage {
         }
     }
 
+    @Override
     public void load(ModelBean model) throws IOException {
         try {
             ModelNode m = (ModelNode) createUnmarshaller().unmarshal(file);
@@ -60,9 +64,9 @@ public class XmlModelStorage {
 
     private void loadSuperTypes(ModelBean model, String pkg, PkgContainer c) throws IOException {
         for (PackageNode p : c.getPackages()) {
-            String group = pkg.isEmpty() ? p.getName() : pkg +"."+ p.getName();
+            String group = pkg.isEmpty() ? p.getName() : pkg + Type.GROUP_SEPARATOR + p.getName();
             for (TypeNode t : p.getTypes()) {
-                TypeBean type = model.getTypeByQName(group + ":" + t.getName());
+                TypeBean type = model.getTypeByQName(group + Type.TYPE_SEPARATOR + t.getName());
                 for (String st : t.getBaseTypeNames()) {
                     TypeBean sType = model.getTypeByQName(st);
                     model.extend(type, sType);
@@ -104,27 +108,27 @@ public class XmlModelStorage {
         return ctx.createUnmarshaller();
     }
 
-    @PostConstruct
-    public void createTestModel() throws IOException {
-        ModelBean model = new ModelBean();
-
-        TypeBean versioned = model.createType("ua.objective.core", "Versioned");
-        model.addAttribute(versioned, "version", new IntType());
-
-        TypeBean any = model.createType("ua.objective.core", "Any");
-        model.addAttribute(any, "created", new DateType());
-        model.addAttribute(any, "updated", new DateType());
-
-        TypeBean user = model.createType("ua.objective.core.users", "User");
-        model.addAttribute(user, "name", new TextType());
-        model.extend(user, any);
-        model.extend(user, versioned);
-        model.changeAbstract(user, false);
-
-        store(model);
-        ModelBean model1 = new ModelBean();
-        load(model1);
-
-        System.out.println(model1);
-    }
+//    @PostConstruct
+//    public void createTestModel() throws IOException {
+//        ModelBean model = new ModelBean();
+//
+//        TypeBean versioned = model.createType("ua.objective.core", "Versioned");
+//        model.addAttribute(versioned, "version", new IntType());
+//
+//        TypeBean any = model.createType("ua.objective.core", "Any");
+//        model.addAttribute(any, "created", new DateType());
+//        model.addAttribute(any, "updated", new DateType());
+//
+//        TypeBean user = model.createType("ua.objective.core.users", "User");
+//        model.addAttribute(user, "name", new TextType());
+//        model.extend(user, any);
+//        model.extend(user, versioned);
+//        model.changeAbstract(user, false);
+//
+//        store(model);
+//        ModelBean model1 = new ModelBean();
+//        load(model1);
+//
+//        System.out.println(model1);
+//    }
 }

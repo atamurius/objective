@@ -7,6 +7,10 @@ import java.util.*;
  */
 public interface Type {
 
+    String TYPE_SEPARATOR = ":";
+    String GROUP_SEPARATOR = ".";
+    String ATTRIBUTE_SEPARATOR = "#";
+
     String getGroup();
 
     String getName();
